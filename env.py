@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 import pygame
 from typing import Any, SupportsFloat 
 
-class rlEnv(Env):
+class rlEnv1(Env):
     
     def __init__(self,W,H):
         #super().__init__()

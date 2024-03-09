@@ -44,8 +44,7 @@ class rlenv(Env):
         return self.conf["X"][0]+j/self.conf["Resolution"],self.conf["Y"][1]-i/self.conf["Resolution"]
         return x,y
     def _xytoij(self,x,y):
-
-        return int(abs(y-self.conf["Y"][1])*self.conf["Resolution"]),int((x-self.conf["X"][0])*self.conf["Resolution"])
+        return int((x-self.conf["X"][0])*self.conf["Resolution"]) , int(abs(y-self.conf["Y"][1])*self.conf["Resolution"])
         
 
     
@@ -56,29 +55,29 @@ class rlenv(Env):
             self.conf = DEFAULT_CONFIG
         else:
             self.conf = conf
-        self.W= (self.conf["X"][1]-self.conf["X"][0])*self.conf["Resolution"]
-        self.H =(self.conf["Y"][1]-self.conf["Y"][0])*self.conf["Resolution"]
+        self.W= (self.conf["X"][1]-self.conf["X"][0])*self.conf["Resolution"]+1
+        self.H =(self.conf["Y"][1]-self.conf["Y"][0])*self.conf["Resolution"]+1
         self.visibility= self.conf["visiblity"]
-        print(self.H, self.W)
+        # print(self.H, self.W)
         self.stepsize=int(1/self.conf["Resolution"])
         self.gravity=9.81
         self.truncated=False
         self.done=False
         self.action_space = Discrete(4)
         self.observation_space = Box(-1e9,1e9,shape=([self.visibility**2+7]),dtype=np.float64)
-        print(f"shape",[self.visibility**2+7])
+        # print(f"shape",[self.visibility**2+7])
         self.grid = np.zeros((self.H,self.W))
         self.grid = np.array(create_grid())
         self.velocity = 1
         self.reward=0
         self.collective=0
         self.finish_row,self.finish_col=self._xytoij(self.conf["end"][0],self.conf["end"][1])
-        self.start_row,self.start_col=self._xytoij(self.conf["end"][0],self.conf["end"][1])
-        print(f"starting ",self.start_row,self.start_col)
+        self.start_row,self.start_col=self._xytoij(self.conf["start"][0],self.conf["start"][1])
+        print(f"starting ",self.start_col,self.start_row)
+        print(f"finishing ",self.finish_col,self.finish_row)
         self.state_trajectory = []
         self.reward_trajectory = []
-        print(self.grid)
-        print(f"ig val",self.finish_col,self.finish_row)
+        # print(f"grid",self.grid)
         self.state = self._to_s(int(self.start_col),int(self.start_row))
     
     def step(self, action):
@@ -96,7 +95,7 @@ class rlenv(Env):
             self.done = False
             row , col = self._move(action,row,col)
             if ((prev_col-col+prev_row-row)==0):
-                self.reward =-1 ####incase it keeps bumping with wall
+                self.reward = -1 ####incase it keeps bumping with wall
             else:
                 self.reward = -float(1/(self.conf["Resolution"] *self.velocity))
             h_new = self.grid[row, col]
@@ -114,14 +113,12 @@ class rlenv(Env):
         # print(self.state)
         obs = [self.state,row,col,self.finish_row,self.finish_col,int(self.truncated),int(self.done)]+list(self._get_surroundings(col,row))
         obs=np.array(obs)
-            
-
-
         return obs,self.reward, self.done,self.truncated, {}
 
     def reset(self,seed=None,options=None):
         super().reset(seed=seed)
-        print_grid(self.grid,None)
+        # print_grid(self.grid,None)
+        # print("I am in reset")
         self.state=self._to_s(int((self.H)/2),int(0.25*(self.W)))####make this random later
         row, col = divmod(self.state, self.W)
         self.velocity = 1
@@ -132,8 +129,9 @@ class rlenv(Env):
         # print(self.state_trajectory)
         self.state_trajectory = []
         self.reward_trajectory = []
-        obs = [self.state,row,col,self.finish_row,self.finish_col,int(self.truncated),int(self.done)]+list(self._get_surroundings(col,row))
-        obs=np.array(obs)       
+        obs = [self.state,row,col,self.finish_row,self.finish_col,int(self.truncated),int(self.done)]+list(self._get_surroundings(col,row))        
+        obs=np.array(obs)
+     
         return obs , {}
     
     
@@ -147,38 +145,40 @@ env=rlenv()
 # for row in range(env.W):
 #     for col in range(env.W):
 #         state_index = env._to_s(row, col)
-#         print(f"({row}, {col}) -> State Index: {state_index}")
-#     break
+#         X,Y = env._ijtoxy(row,col)
+#         Col, Row = env._xytoij(X,Y)
+#         print(f"({row}, {col}) --> {Row} {Col} -> State Index: {state_index} at X = {X} and Y = {Y}")
+#     # break
 check_env(env)
 # model = DQN("MlpPolicy", env,learning_rate=0.001,buffer_size=1000 ,verbose=1)
 # model.learn(total_timesteps=2000,progress_bar=True)
 
-episodes=1
-for episode in range (1, episodes+1):
-    state,_ = env.reset()
-    # print(state)
-    done = False
-    truncated=False
-    score =0
-    ac=[2,2,2,2,2,2,2,2,2,2,2,2,2]
-    # while not done:
-    for i in range (0,10):
-        action= ac[i]#env.action_space.sample()
-        print(f"State now {divmod(int(state[0]),env.W)}")
-        state,reward,done,truncated,info = env.step(action)
-        # print(state)
-        row, col = divmod(int(state[0]),env.W)
+# episodes=1
+# for episode in range (1, episodes+1):
+#     state,_ = env.reset()
+#     # print(state)
+#     done = False
+#     truncated=False
+#     score =0
+#     ac=[2,2,2,2,2,2,2,2,2,2,2,2,2]
+#     # while not done:
+#     for i in range (0,10):
+#         action= ac[i]#env.action_space.sample()
+#         print(f"State now {divmod(int(state[0]),env.W)}")
+#         state,reward,done,truncated,info = env.step(action)
+#         print(state)
+#         row, col = divmod(int(state[0]),env.W)
         
-        a="left"
-        if action==0:
-            a="l"
-        if action==1:
-            a="d"
-        if action==2:
-            a="r"
-        if action==3:
-            a="u"
+#         a="left"
+#         if action==0:
+#             a="l"
+#         if action==1:
+#             a="d"
+#         if action==2:
+#             a="r"
+#         if action==3:
+#             a="u"
         
-        print(f"Action {a} State {row,col, state[0]} Reward {reward}")
-        score=reward
-    print("Episode:{} Score{}\n\n".format(episode,score))
+#         print(f"Action {a} State {row,col, int(state[0])} Reward {reward}")
+#         score=reward
+#     print("Episode:{} Score{}\n\n".format(episode,score))

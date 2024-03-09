@@ -2,8 +2,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from config import DEFAULT_CONFIG
 
-
-
 def create_grid(conf=None):
     if conf==None:
             conf = DEFAULT_CONFIG
@@ -14,8 +12,8 @@ def create_grid(conf=None):
     y_first = conf["Y"][0]
     y_second = conf["Y"][1]
     Resolution = conf["Resolution"]
-    rows = Resolution*(x_second - x_first)
-    cols = Resolution*(y_second - y_first)
+    rows = Resolution*(x_second - x_first) + 1
+    cols = Resolution*(y_second - y_first) + 1
     option = conf["options"]
     def potential1(x, y):
         # Mexican Hat
@@ -36,7 +34,6 @@ def create_grid(conf=None):
         return [[potential3(x, y) for x in x_values] for y in y_values]
     return 
 
-
 # states = [[0,0], [1,1], [2,2], [3,3], [4,4], [5,5], [6,6],[7,7],[8,8],[9,9],[10,10],[11,11],[12,12],[13,13]]
 
 def print_grid(grid,conf): 
@@ -49,8 +46,8 @@ def print_grid(grid,conf):
     y_first = conf["Y"][0]
     y_second = conf["Y"][1]
     Resolution = conf["Resolution"]
-    rows = Resolution*(x_second - x_first)
-    cols = Resolution*(y_second - y_first)
+    rows = Resolution*(x_second - x_first)+1
+    cols = Resolution*(y_second - y_first)+1
     option = conf["options"]
     max_abs_value = np.max(np.abs(grid))  # find the maximum absolute value in the grid
     plt.imshow(grid, cmap='RdBu', interpolation='nearest', vmin=-max_abs_value, vmax=max_abs_value)
@@ -76,8 +73,8 @@ def print_grid_and_path(grid, states, conf):
     y_first = conf["Y"][0]
     y_second = conf["Y"][1]
     Resolution = conf["Resolution"]
-    rows = Resolution*(x_second - x_first)
-    cols = Resolution*(y_second - y_first)
+    rows = Resolution*(x_second - x_first)+1
+    cols = Resolution*(y_second - y_first)+1
     option = conf["options"]
     max_abs_value = np.max(np.abs(grid))  # find the maximum absolute value in the grid
     plt.imshow(grid, cmap='RdBu', interpolation='nearest', vmin=-max_abs_value, vmax=max_abs_value)
