@@ -1,5 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from datetime import datetime
+import os
 from config import DEFAULT_CONFIG
 
 def create_grid(conf=None):
@@ -34,8 +36,6 @@ def create_grid(conf=None):
         return [[potential3(x, y) for x in x_values] for y in y_values]
     return 
 
-# states = [[0,0], [1,1], [2,2], [3,3], [4,4], [5,5], [6,6],[7,7],[8,8],[9,9],[10,10],[11,11],[12,12],[13,13]]
-
 def print_grid(grid,conf): 
     if conf == None:
         conf = DEFAULT_CONFIG
@@ -63,7 +63,7 @@ def print_grid(grid,conf):
     plt.colorbar()
     plt.show()
 
-def print_grid_and_path(grid, states, conf):
+def print_grid_and_path(grid, states, conf, save_path=None, plotting = False):
     if conf==None:
         conf = DEFAULT_CONFIG
     else:
@@ -75,6 +75,7 @@ def print_grid_and_path(grid, states, conf):
     Resolution = conf["Resolution"]
     rows = Resolution*(x_second - x_first)+1
     cols = Resolution*(y_second - y_first)+1
+    
     option = conf["options"]
     max_abs_value = np.max(np.abs(grid))  # find the maximum absolute value in the grid
     plt.imshow(grid, cmap='RdBu', interpolation='nearest', vmin=-max_abs_value, vmax=max_abs_value)
@@ -91,7 +92,39 @@ def print_grid_and_path(grid, states, conf):
     x_coords = [state[0] for state in states]
     y_coords = [state[1] for state in states]
 
-    # Plot path
+    # Calculate differences between consecutive points for arrow directions
+    x_diff = np.diff(x_coords)
+    y_diff = np.diff(y_coords)
+
+    # Add arrows
+    for i in range(len(x_coords)-1):
+        plt.quiver(x_coords[i], y_coords[i], x_diff[i], y_diff[i], angles='xy', scale_units='xy', scale=1.5, color='red')
+   
+    # if plotting==True:
     plt.plot(x_coords, y_coords, color='black')
-    plt.scatter(x_coords, y_coords, color='green')
-    plt.show()
+    # plt.scatter(x_coords, y_coords, color='green')
+    # Plot first point in a different color
+    plt.scatter(x_coords[0], y_coords[0], color='orange',s=20)
+
+    # Plot the rest of the points
+    plt.scatter(x_coords[1:], y_coords[1:], color='green',s=10)
+
+    current_time = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    if save_path is None:
+        save_path = f'RL_agents/figure_{current_time}.png'
+    else:
+        directory = os.path.dirname(save_path)
+        save_path = f'{directory}/figure_{current_time}.png'
+        
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+    plt.savefig(save_path)
+
+    if plotting==True:
+        plt.show()   
+    plt.close() 
+
+#-----------------Test-----------------
+# states = [[1, 2], [0, 2], [1, 2], [1, 3], [1, 4], [2, 4], [3, 4], [2, 4], [2, 4], [3, 4], [3, 3], [4, 3], [4, 3], [4, 2], [3, 2], [2, 2], [1, 2], [2, 2], [2, 1], [2, 2], [3, 2], [4, 2], [4, 2], [4, 1], [4, 0], [4, 0], [4, 1], [4, 2], [3, 2], [2, 2], [1, 2], [2, 2], [3, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 3], [4, 2], [4, 2], [4, 3], [3, 3], [4, 3], [4, 4], [3, 4], [4, 4], [3, 4], [2, 4], [2, 3], [2, 3]]
+
+# grid = create_grid(None)
+# print_grid_and_path(grid, states, None,None,False)

@@ -71,20 +71,22 @@ class rlenv(Env):
         self.velocity = 1
         self.reward=0
         self.collective=0
-        self.finish_row,self.finish_col=self._xytoij(self.conf["end"][0],self.conf["end"][1])
+        self.finish_col,self.finish_row=self._xytoij(self.conf["end"][0],self.conf["end"][1]) ############# this is fucked look into it 
         self.start_row,self.start_col=self._xytoij(self.conf["start"][0],self.conf["start"][1])
         print(f"starting ",self.start_col,self.start_row)
         print(f"finishing ",self.finish_col,self.finish_row)
         self.state_trajectory = []
         self.reward_trajectory = []
         # print(f"grid",self.grid)
-        self.state = self._to_s(int(self.start_col),int(self.start_row))
+        self.random_init = self.conf["randomstart"]
+        self.state=self._to_s(int(self.start_row),int(self.start_col))
     
     def step(self, action):
+        # print(f"asas",self.state)
         row, col = divmod(self.state, self.W)
         prev_row,prev_col= row,col
         h_prev=self.grid[row,col]
-        if self.velocity == 0 or self.collective < -30 :  # Check termination conditions
+        if self.velocity == 0 or self.collective < -60 :  # Check termination conditions
             self.reward=-10
             self.truncated = True
             
@@ -108,7 +110,7 @@ class rlenv(Env):
                 self.velocity = sqrt(update_vel)
             self.collective+=self.reward
             self.state = self._to_s(row, col)
-        self.reward_trajectory.append(self.render)
+        self.reward_trajectory.append(self.reward)
         self.state_trajectory.append([row,col])
         # print(self.state)
         obs = [self.state,row,col,self.finish_row,self.finish_col,int(self.truncated),int(self.done)]+list(self._get_surroundings(col,row))
@@ -118,8 +120,17 @@ class rlenv(Env):
     def reset(self,seed=None,options=None):
         super().reset(seed=seed)
         # print_grid(self.grid,None)
-        # print("I am in reset")
-        self.state=self._to_s(int((self.H)/2),int(0.25*(self.W)))####make this random later
+        if self.random_init:
+            random_y = np.random.uniform(self.conf["rand_Y"][0], self.conf["rand_Y"][1] )  # Random row index
+            random_x = np.random.uniform(self.conf["rand_X"][0], self.conf["rand_X"][1] )
+            random_row , random_col = self._xytoij(random_x,random_y)
+            # print(random_col,random_row)
+            self.state = self._to_s(random_row, random_col)
+            
+        else:
+            self.state=self._to_s(int(self.start_row),int(self.start_col))
+        # print(f"selfstate",self.state)
+
         row, col = divmod(self.state, self.W)
         self.velocity = 1
         self.reward = 0
@@ -129,13 +140,14 @@ class rlenv(Env):
         # print(self.state_trajectory)
         self.state_trajectory = []
         self.reward_trajectory = []
+        self.state_trajectory.append([row,col])
         obs = [self.state,row,col,self.finish_row,self.finish_col,int(self.truncated),int(self.done)]+list(self._get_surroundings(col,row))        
         obs=np.array(obs)
      
         return obs , {}
     
     
-    
+    ######kabhi yeh bhi karlenge
     
     # def render(self) -> RenderFrame | list[RenderFrame] | None:
     #     pass
@@ -148,6 +160,7 @@ env=rlenv()
 #         X,Y = env._ijtoxy(row,col)
 #         Col, Row = env._xytoij(X,Y)
 #         print(f"({row}, {col}) --> {Row} {Col} -> State Index: {state_index} at X = {X} and Y = {Y}")
+env.reset()
 #     # break
 check_env(env)
 # model = DQN("MlpPolicy", env,learning_rate=0.001,buffer_size=1000 ,verbose=1)

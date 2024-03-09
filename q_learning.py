@@ -10,12 +10,16 @@ import os
 from tqdm import tqdm
 from colorama import Fore , Back
 
-def run(EPISODES,verbose,epsilon_value,print_val,q,env):
+def save_q_table(Q, filename):
+        with open(filename, 'wb') as f:
+            pickle.dump(Q, f)
+
+def run(EPISODES,verbose,epsilon_value,print_val,q,env,filename):
     # q = np.zeros((env.observation_space.n,env.action_space.n))
     learning_rate=0.7
     discount_factor=1
     epsilon= epsilon_value ## 100% random actions
-    epsilon_decay_rate=0.000004
+    epsilon_decay_rate=0.000001
     rng = np.random.default_rng()
     reward_per_episodes=np.zeros(EPISODES)
     # env= rlenv()
@@ -25,10 +29,6 @@ def run(EPISODES,verbose,epsilon_value,print_val,q,env):
     #     with open(filename, 'rb') as f:
     #         Q = pickle.load(f)
     #     return Q
-
-    def save_q_table(Q, filename):
-        with open(filename, 'wb') as f:
-            pickle.dump(Q, f)
 
     for i in tqdm(range(EPISODES)):
         
@@ -53,12 +53,11 @@ def run(EPISODES,verbose,epsilon_value,print_val,q,env):
             reward_per_episodes[i]+=reward
             # print(q)
             # break
-        epsilon= max(epsilon-epsilon_decay_rate,0.15)
+        epsilon= max(epsilon-epsilon_decay_rate,0.05)
         if (i %print_val==0):
             print(i, epsilon)
         ##------idhar bhi save wali cheez daalni hai------##
-            #Q = sys.argv[1] # Your Q-table
-           # save_q_table(Q, 'q_table.pkl')     
+            save_q_table(q, 'q_table.pkl')     
         #----yahan tak----#
             print(f"Truncated {truncated} DONE {done}")
             print_grid_and_path(env.grid,env.state_trajectory ,conf=None,save_path='Q-learning/', plotting=False)
@@ -69,13 +68,14 @@ def run(EPISODES,verbose,epsilon_value,print_val,q,env):
         # break
         
     #save line daalni hai#
-    #Q = sys.argv[1] # Your Q-table
-    #save_q_table(Q, 'q_table.pkl')          
+    save_q_table(q, 'q_table.pkl')          
     # print(q)
 
 def main():
     print("a")
     env = rlenv()
+    q_table_filename= "IDK"
+    filename= "IDK"
     if len(sys.argv) >1 :
         q_table_filename = sys.argv[1]
         # q = np.load(q_table_filename)
@@ -89,7 +89,7 @@ def main():
     else:
         q = np.zeros((env.W*env.H,env.action_space.n))
 
-    run(250000,False,1,10000,q,env,filename)
+    run(1000000,False,1,10000,q,env,filename)
     ## get values of system argvv
 
 
