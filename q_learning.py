@@ -16,10 +16,10 @@ def save_q_table(Q, filename):
 
 def run(EPISODES,verbose,epsilon_value,print_val,q,env,filename):
     # q = np.zeros((env.observation_space.n,env.action_space.n))
-    learning_rate=0.7
+    learning_rate=0.9
     discount_factor=1
     epsilon= epsilon_value ## 100% random actions
-    epsilon_decay_rate=0.000001
+    epsilon_decay_rate=0.0000015
     rng = np.random.default_rng()
     reward_per_episodes=np.zeros(EPISODES)
     # env= rlenv()
@@ -29,14 +29,15 @@ def run(EPISODES,verbose,epsilon_value,print_val,q,env,filename):
     #     with open(filename, 'rb') as f:
     #         Q = pickle.load(f)
     #     return Q
+    print(q)
 
     for i in tqdm(range(EPISODES)):
         
         state,_ = env.reset()
         done= False
         truncated= False
-        if (i%1000==0):
-            print(i)
+        # if (i%1000==0):
+        #     print(i)
         while (not done and  not truncated):
             # print("*********************",state[0])
             if rng.random() <epsilon:
@@ -53,14 +54,19 @@ def run(EPISODES,verbose,epsilon_value,print_val,q,env,filename):
             reward_per_episodes[i]+=reward
             # print(q)
             # break
-        epsilon= max(epsilon-epsilon_decay_rate,0.05)
+        epsilon= max(epsilon-epsilon_decay_rate,0.15)
+        if (done):
+            print_grid_and_path(env.grid,env.state_trajectory ,conf=None,save_path='Q-learning /', plotting=False)
+        
         if (i %print_val==0):
             print(i, epsilon)
         ##------idhar bhi save wali cheez daalni hai------##
-            save_q_table(q, 'q_table.pkl')     
+            save_q_table(q, 'q_table.pkl')  
+            # print(q)   
         #----yahan tak----#
             print(f"Truncated {truncated} DONE {done}")
-            print_grid_and_path(env.grid,env.state_trajectory ,conf=None,save_path='Q-learning/', plotting=False)
+            if (done):
+                print_grid_and_path(env.grid,env.state_trajectory ,conf=None,save_path='Q-learning/donea/', plotting=False)
         
         ##---------edit karna hai----------#
         # pbar_outer.set_description(f"Episode {i}")
@@ -80,8 +86,11 @@ def main():
         q_table_filename = sys.argv[1]
         # q = np.load(q_table_filename)
         if os.path.exists(q_table_filename):
+            print("present",q_table_filename)
             with open(q_table_filename, 'rb') as f:
                 q = pickle.load(f)
+                print("opened")
+                print(q)
         else:
             q = np.zeros((env.W*env.H,env.action_space.n))
             with open(q_table_filename, 'wb') as f:
@@ -89,7 +98,7 @@ def main():
     else:
         q = np.zeros((env.W*env.H,env.action_space.n))
 
-    run(1000000,False,1,10000,q,env,filename)
+    run(800000,False,0.05,1000,q,env,filename)
     ## get values of system argvv
 
 

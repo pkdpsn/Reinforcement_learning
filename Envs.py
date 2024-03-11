@@ -64,7 +64,7 @@ class rlenv(Env):
         self.truncated=False
         self.done=False
         self.action_space = Discrete(4)
-        self.observation_space = Box(-1e9,1e9,shape=([self.visibility**2+7]),dtype=np.float64)
+        self.observation_space = Box(-1e9,1e9,shape=([self.visibility**2+8]),dtype=np.float64)
         # print(f"shape",[self.visibility**2+7])
         self.grid = np.zeros((self.H,self.W))
         self.grid = np.array(create_grid())
@@ -72,7 +72,7 @@ class rlenv(Env):
         self.reward=0
         self.collective=0
         self.finish_col,self.finish_row=self._xytoij(self.conf["end"][0],self.conf["end"][1]) ############# this is fucked look into it 
-        self.start_row,self.start_col=self._xytoij(self.conf["start"][0],self.conf["start"][1])
+        self.start_col,self.start_row=self._xytoij(self.conf["start"][0],self.conf["start"][1])
         print(f"starting ",self.start_col,self.start_row)
         print(f"finishing ",self.finish_col,self.finish_row)
         self.state_trajectory = []
@@ -86,7 +86,7 @@ class rlenv(Env):
         row, col = divmod(self.state, self.W)
         prev_row,prev_col= row,col
         h_prev=self.grid[row,col]
-        if self.velocity == 0 or self.collective < -60 :  # Check termination conditions
+        if self.velocity == 0 or self.collective < -30 :  # Check termination conditions
             self.reward=-10
             self.truncated = True
             
@@ -113,7 +113,7 @@ class rlenv(Env):
         self.reward_trajectory.append(self.reward)
         self.state_trajectory.append([row,col])
         # print(self.state)
-        obs = [self.state,row,col,self.finish_row,self.finish_col,int(self.truncated),int(self.done)]+list(self._get_surroundings(col,row))
+        obs = [self.state,row,col,self.finish_row,self.finish_col,int(self.truncated),int(self.done),int(self.velocity)]+list(self._get_surroundings(col,row))
         obs=np.array(obs)
         return obs,self.reward, self.done,self.truncated, {}
 
@@ -141,7 +141,7 @@ class rlenv(Env):
         self.state_trajectory = []
         self.reward_trajectory = []
         self.state_trajectory.append([row,col])
-        obs = [self.state,row,col,self.finish_row,self.finish_col,int(self.truncated),int(self.done)]+list(self._get_surroundings(col,row))        
+        obs = [self.state,row,col,self.finish_row,self.finish_col,int(self.truncated),int(self.done),int(self.velocity)]+list(self._get_surroundings(col,row))        
         obs=np.array(obs)
      
         return obs , {}
@@ -149,9 +149,11 @@ class rlenv(Env):
     
     ######kabhi yeh bhi karlenge
     
-    # def render(self) -> RenderFrame | list[RenderFrame] | None:
-    #     pass
-    #     return super().render()
+    def render(self,seed=None , options = None):
+        # super().render(seed, options)
+        print(self.state_trajectory)
+        print_grid_and_path(self.grid,self.state_trajectory ,conf=None,save_path='Render/', plotting=False)
+        return 
 
 env=rlenv()
 # for row in range(env.W):
@@ -162,6 +164,7 @@ env=rlenv()
 #         print(f"({row}, {col}) --> {Row} {Col} -> State Index: {state_index} at X = {X} and Y = {Y}")
 env.reset()
 #     # break
+env.render()
 check_env(env)
 # model = DQN("MlpPolicy", env,learning_rate=0.001,buffer_size=1000 ,verbose=1)
 # model.learn(total_timesteps=2000,progress_bar=True)

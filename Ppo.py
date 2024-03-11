@@ -9,7 +9,7 @@ from Envs import rlenv
 
 models_dir = "models/PPO"
 logdir = "logs"
-TIMESTEPS = 20000
+TIMESTEPS = 200000
 
 if not os.path.exists(models_dir):
     os.makedirs(models_dir)
@@ -21,10 +21,10 @@ current_time = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 def main():
     freeze_support()
     num_cpu = 6
-    env = SubprocVecEnv([lambda: rlenv() for _ in range(num_cpu)])
+    env =rlenv()# SubprocVecEnv([lambda: rlenv() for _ in range(num_cpu)])
 
     model = PPO("MlpPolicy", env, verbose=1, tensorboard_log=logdir)
-    model.learn(total_timesteps=TIMESTEPS, tb_log_name="PPO", log_interval=1)
+    model.learn(total_timesteps=TIMESTEPS, tb_log_name="PPO", log_interval=1,progress_bar=True)
 
     model.save(f"{models_dir}/PPO_{TIMESTEPS}_{current_time}")
 
