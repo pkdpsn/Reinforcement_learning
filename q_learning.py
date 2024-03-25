@@ -56,7 +56,7 @@ def run(EPISODES,verbose,epsilon_value,print_val,q,env,filename):
             # break
         epsilon= max(epsilon-epsilon_decay_rate,0.15)
         if (done):
-            print_grid_and_path(env.grid,env.state_trajectory ,conf=None,save_path='Q-learning /', plotting=False)
+            print_grid_and_path(env.grid,env.state_trajectory ,conf=None,save_path='Q-learning /', plotting=False, graph_title= None)
         
         if (i %print_val==0):
             print(i, epsilon)
@@ -66,7 +66,7 @@ def run(EPISODES,verbose,epsilon_value,print_val,q,env,filename):
         #----yahan tak----#
             print(f"Truncated {truncated} DONE {done}")
             if (done):
-                print_grid_and_path(env.grid,env.state_trajectory ,conf=None,save_path='Q-learning/donea/', plotting=False)
+                print_grid_and_path(env.grid,env.state_trajectory ,conf=None,save_path='Q-learning/donea/', plotting=False, graph_title= None)
         
         ##---------edit karna hai----------#
         # pbar_outer.set_description(f"Episode {i}")

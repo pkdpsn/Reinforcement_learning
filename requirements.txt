@@ -1,0 +1,8 @@
+colorama==0.4.6
+gymnasium==0.29.1
+matplotlib==3.8.2
+numpy==1.26.4
+pygame==2.5.2
+stable_baselines3==2.2.1
+tqdm==4.65.0
+tqdm==4.66.1

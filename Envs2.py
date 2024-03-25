@@ -1,7 +1,7 @@
 from gymnasium import Env
 from gymnasium.spaces import Discrete,Box 
-from stable_baselines3.common.env_checker import check_env
-from stable_baselines3 import A2C,PPO, DQN
+# from stable_baselines3.common.env_checker import check_env
+# from stable_baselines3 import A2C,PPO, DQN
 import numpy as np
 import random
 from math import sqrt
@@ -55,9 +55,8 @@ class rlenv(Env):
             self.conf = DEFAULT_CONFIG
         else:
             self.conf = conf
-        self.W= int((self.conf["X"][1]-self.conf["X"][0])*self.conf["Resolution"])+1
-        self.H =int((self.conf["Y"][1]-self.conf["Y"][0])*self.conf["Resolution"])+1
-        print(self.H,self.W)
+        self.W= (self.conf["X"][1]-self.conf["X"][0])*self.conf["Resolution"]+1
+        self.H =(self.conf["Y"][1]-self.conf["Y"][0])*self.conf["Resolution"]+1
         self.visibility= self.conf["visiblity"]
         # print(self.H, self.W)
         self.stepsize=int(1/self.conf["Resolution"])
@@ -68,51 +67,74 @@ class rlenv(Env):
         self.observation_space = Box(-1e9,1e9,shape=([self.visibility**2+8]),dtype=np.float64)
         # print(f"shape",[self.visibility**2+7])
         self.grid = np.zeros((self.H,self.W))
-        self.grid = np.array(create_grid())
+        self.grid = np.array(create_grid()) # making the grid here... and filling it with potentials...
         self.velocity = 1
-        self.reward=0
-        self.collective=0
-        self.finish_row,self.finish_col=self._xytoij(self.conf["end"][0],self.conf["end"][1]) ############# this is fucked look into it 
+        self.reward = 0
+        self.collective = 0
+        self.finish_col,self.finish_row=self._xytoij(self.conf["end"][0],self.conf["end"][1]) ############# this is fucked look into it 
         self.start_col,self.start_row=self._xytoij(self.conf["start"][0],self.conf["start"][1])
         print(f"starting ",self.start_col,self.start_row)
         print(f"finishing ",self.finish_col,self.finish_row)
         self.state_trajectory = []
         self.reward_trajectory = []
         # print(f"grid",self.grid)
-        self.random_init = bool(self.conf["randomstart"])
+        self.random_init = self.conf["randomstart"]
         self.state=self._to_s(int(self.start_row),int(self.start_col))
     
     def step(self, action):
         # print(f"asas",self.state)
-        # print(f" ENTRY VEL {self.velocity}")
         row, col = divmod(self.state, self.W)
         prev_row,prev_col= row,col
         h_prev=self.grid[row,col]
         if self.velocity == 0 or self.collective < -30 :  # Check termination conditions
-            self.reward=-100
+            self.reward = -10
             self.truncated = True
             
         elif  (row == int(self.finish_col) and col == int(self.finish_row)): 
-            self.reward=0
-            self.done= True
+            self.reward = 0
+            self.done = True
         else:
             self.done = False
             row , col = self._move(action,row,col)
-            if ((prev_col-col+prev_row-row)==0):
+            if ((prev_col - col + prev_row - row) == 0):
                 self.reward = -1 ####incase it keeps bumping with wall
             else:
-                self.reward = -float(1/(self.conf["Resolution"] *self.velocity))
+                self.reward = -float(1/(self.conf["Resolution"] * self.velocity))
             h_new = self.grid[row, col]
 
             # we update vel make afunction for further usage with new equations
-            update_vel = self.velocity**2 + 2 * self.gravity * (h_prev - h_new)
+            du_dx = (self.grid[row, col] - self.grid[row, prev_col])*self.conf["Resolution"]
+            du_dy = (self.grid[row, col] - self.grid[prev_row, col])*self.conf["Resolution"]
+
+            fx = -du_dx
+            fy = -du_dy
+            f = sqrt(fx**2 + fy**2)
+
+            if (action == 0):   # Move left
+                dx_ds = -1
+                dy_ds = 0
+            elif (action == 1):  # Move down
+                dx_ds = 0  
+                dy_ds = -1 
+            elif (action == 2):  # Move right
+                dx_ds = 1
+                dy_ds = 0
+            elif (action == 3): # Move up
+                dx_ds = 0
+                dy_ds = 1
+
+            update_vel = -(dx_ds*du_dx + dy_ds*du_dx) + sqrt(1 - (f**2 -(dx_ds*du_dx + dy_ds*du_dx)**2))
+
+            ###------------yahan likhna hai ki velocity kaise change hogi-----------xx---kar diii---xx---###
+            # update_vel = self.velocity**2 + 2 * self.gravity * (h_prev - h_new)
+
             if update_vel < 0:
                 self.velocity = 0
             else:
-                self.velocity = sqrt(update_vel)
+                self.velocity = update_vel
+
             self.collective+=self.reward
             self.state = self._to_s(row, col)
-            # print(f"Vel {self.velocity} update {update_vel} , H {h_prev - h_new}")
         self.reward_trajectory.append(self.reward)
         self.state_trajectory.append([row,col])
         # print(self.state)
@@ -165,29 +187,29 @@ env=rlenv()
 #         X,Y = env._ijtoxy(row,col)
 #         Col, Row = env._xytoij(X,Y)
 #         print(f"({row}, {col}) --> {Row} {Col} -> State Index: {state_index} at X = {X} and Y = {Y}")
-# env.reset()
-# #     # break
-# env.render()
-check_env(env)
+env.reset()
+#     # break
+env.render()
+# check_env(env)
 # model = DQN("MlpPolicy", env,learning_rate=0.001,buffer_size=1000 ,verbose=1)
 # model.learn(total_timesteps=2000,progress_bar=True)
 
 episodes=1
+time = 0
 
-print("*"*100)
 for episode in range (1, episodes+1):
     state,_ = env.reset()
     # print(state)
     done = False
     truncated=False
     score =0
-    ac=[2,2,2,2,2,2,2,2,2,2,2,2,2]
+    ac=[2,2,2,2,2,2,2,2,2,2]
     # while not done:
     for i in range (0,10):
         action= ac[i]#env.action_space.sample()
         print(f"State now {divmod(int(state[0]),env.W)}")
         state,reward,done,truncated,info = env.step(action)
-        #print(state)
+        # print(state)
         row, col = divmod(int(state[0]),env.W)
         
         a="left"
@@ -199,8 +221,9 @@ for episode in range (1, episodes+1):
             a="r"
         if action==3:
             a="u"
-        
         print(f"Action {a} State {row,col, int(state[0])} Reward {reward}")
-        score=reward
+        score+=reward
+        print("collective = ", env.collective)
     print("Episode:{} Score{}\n\n".format(episode,score))
     env.render()
+
