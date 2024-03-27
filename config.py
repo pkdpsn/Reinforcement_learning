@@ -4,8 +4,8 @@ DEFAULT_CONFIG = {
     "Y":[-1,1],
     "start":[-0.5,0],
     "end":[0.5,0],
-    "visiblity":9,###keep it odd 
-    "Resolution":15,
+    "visiblity":5,###keep it odd 
+    "Resolution":10,
     "options":1,
     "randomstart":0,
     "rand_Y":[-0.5,0.5],
