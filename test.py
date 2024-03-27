@@ -1,51 +1,78 @@
-import torch as th
-import torch.nn as nn
-from gymnasium import spaces
+import torch
+from torchviz import make_dot
 
-from stable_baselines3 import PPO
-from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
-
-
-class CustomCNN(BaseFeaturesExtractor):
-    """
-    :param observation_space: (gym.Space)
-    :param features_dim: (int) Number of features extracted.
-        This corresponds to the number of unit for the last layer.
-    """
-
-    def __init__(self, observation_space: spaces.Box, features_dim: int = 256):
-        super().__init__(observation_space, features_dim)
-        # We assume CxHxW images (channels first)
-        # Re-ordering will be done by pre-preprocessing or wrapper
-        n_input_channels = observation_space.shape[0]
-        self.cnn = nn.Sequential(
-            nn.Conv2d(n_input_channels, 32, kernel_size=8, stride=4, padding=0),
-            nn.ReLU(),
-            nn.Conv2d(32, 64, kernel_size=4, stride=2, padding=0),
-            nn.ReLU(),
-            nn.Flatten(),
-        )
-
-        # Compute shape by doing one forward pass
-        with th.no_grad():
-            n_flatten = self.cnn(
-                th.as_tensor(observation_space.sample()[None]).float()
-            ).shape[1]
-
-        self.linear = nn.Sequential(nn.Linear(n_flatten, features_dim), nn.ReLU())
-
-    def forward(self, observations: th.Tensor) -> th.Tensor:
-        return self.linear(self.cnn(observations))
-
-policy_kwargs = dict(
-    features_extractor_class=CustomCNN,
-    features_extractor_kwargs=dict(features_dim=128),
+# Define the model architecture string
+model_architecture = """
+MultiInputActorCriticPolicy(
+  (features_extractor): CustomCombinedExtractor(
+    (extractors): ModuleDict(
+      (image): Sequential(
+        (0): Conv2d(5, 32, kernel_size=(1, 1), stride=(4, 4))
+        (1): ReLU()
+        (2): Flatten(start_dim=1, end_dim=-1)
+      )
+      (vector): Sequential(
+        (0): Linear(in_features=8, out_features=64, bias=True)
+        (1): ReLU()
+        (2): Linear(in_features=64, out_features=32, bias=True)
+        (3): ReLU()
+      )
+    )
+  )
+  (pi_features_extractor): CustomCombinedExtractor(
+    (extractors): ModuleDict(
+      (image): Sequential(
+        (0): Conv2d(5, 32, kernel_size=(1, 1), stride=(4, 4))
+        (1): ReLU()
+        (2): Flatten(start_dim=1, end_dim=-1)
+      )
+      (vector): Sequential(
+        (0): Linear(in_features=8, out_features=64, bias=True)
+        (1): ReLU()
+        (2): Linear(in_features=64, out_features=32, bias=True)
+        (3): ReLU()
+      )
+    )
+  )
+  (vf_features_extractor): CustomCombinedExtractor(
+    (extractors): ModuleDict(
+      (image): Sequential(
+        (0): Conv2d(5, 32, kernel_size=(1, 1), stride=(4, 4))
+        (1): ReLU()
+        (2): Flatten(start_dim=1, end_dim=-1)
+      )
+      (vector): Sequential(
+        (0): Linear(in_features=8, out_features=64, bias=True)
+        (1): ReLU()
+        (2): Linear(in_features=64, out_features=32, bias=True)
+        (3): ReLU()
+      )
+    )
+  )
+  (mlp_extractor): MlpExtractor(
+    (policy_net): Sequential(
+      (0): Linear(in_features=96, out_features=64, bias=True)
+      (1): Tanh()
+      (2): Linear(in_features=64, out_features=64, bias=True)
+      (3): Tanh()
+    )
+    (value_net): Sequential(
+      (0): Linear(in_features=96, out_features=64, bias=True)
+      (1): Tanh()
+      (2): Linear(in_features=64, out_features=64, bias=True)
+      (3): Tanh()
+    )
+  )
+  (action_net): Linear(in_features=64, out_features=4, bias=True)
+  (value_net): Linear(in_features=64, out_features=1, bias=True)
 )
-model = PPO("CnnPolicy", "BreakoutNoFrameskip-v4", policy_kwargs=policy_kwargs, verbose=1)
-## print the shape of observation space also print tpye of observation space
-print(model.observation_space.shape)
-print("*"*10)
-print(model.observation_space)
-# print(model.policy)
-print("*"*10)
-# model.learn(1000)
+"""
+
+# Create a dummy input to trace the model
+dummy_input = torch.rand(1, 5)  # Change the input shape if needed
+
+# Create a graph from the model architecture string
+graph = make_dot(model_architecture, params=dict(model.named_parameters()), input_names=["input"])
+
+# Save the graph to a file or display it
+graph.render("model_architecture", format="png")  # Change the file format if needed

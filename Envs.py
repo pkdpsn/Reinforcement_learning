@@ -1,5 +1,6 @@
 from gymnasium import Env
-from gymnasium.spaces import Discrete,Box 
+import gymnasium as gym
+from gymnasium.spaces import Discrete,Box , Dict
 from stable_baselines3.common.env_checker import check_env
 from stable_baselines3 import A2C,PPO, DQN
 import numpy as np
@@ -9,7 +10,8 @@ from matplotlib import pyplot as plt
 from typing import Any, SupportsFloat
 from config import DEFAULT_CONFIG
 from utils import *
-
+import warnings
+warnings.filterwarnings("ignore")
 class rlenv(Env):
     def _to_s(self, row, col):
         return row * self.W + col
@@ -38,8 +40,8 @@ class rlenv(Env):
         start_i_sub, start_j_sub = half_size - (i - start_i), half_size - (j - start_j)
         end_i_sub, end_j_sub = start_i_sub + (end_i - start_i), start_j_sub + (end_j - start_j)
         subsection[start_i_sub:end_i_sub, start_j_sub:end_j_sub] = self.grid[start_i:end_i, start_j:end_j]
-
-        return subsection.flatten()
+        subsection = subsection[..., np.newaxis]
+        return subsection
     def _ijtoxy(self,i,j):
         return self.conf["X"][0]+j/self.conf["Resolution"],self.conf["Y"][1]-i/self.conf["Resolution"]
         return x,y
@@ -65,7 +67,16 @@ class rlenv(Env):
         self.truncated=False
         self.done=False
         self.action_space = Discrete(4)
-        self.observation_space = Box(-1e9,1e9,shape=([self.visibility**2+8]),dtype=np.float64)
+        ## new observation space
+        image_space = Box(low=-float('inf'), high=float('inf'), shape=(self.visibility, self.visibility, 1), dtype=np.float64)  # Adjust height, width, and channels accordingly
+        vector_space = Box(low=-float('inf'), high=float('inf'), shape=(8,), dtype=np.float64)  # Adjust vector_dim accordingly
+
+        # Combine the image and vector spaces into a dictionary
+        self.observation_space = Dict({
+            "image": image_space,
+            "vector": vector_space
+        })
+        # self.observation_space = Box(-1e9,1e9,shape=([self.visibility**2+8]),dtype=np.float64)
         # print(f"shape",[self.visibility**2+7])
         self.grid = np.zeros((self.H,self.W))
         self.grid = np.array(create_grid())
@@ -89,7 +100,7 @@ class rlenv(Env):
         prev_row,prev_col= row,col
         h_prev=self.grid[row,col]
         if self.velocity == 0 or self.collective < -30 :  # Check termination conditions
-            self.reward=-100
+            self.reward=-20
             self.truncated = True
             
         elif  (row == int(self.finish_col) and col == int(self.finish_row)): 
@@ -116,8 +127,15 @@ class rlenv(Env):
         self.reward_trajectory.append(self.reward)
         self.state_trajectory.append([row,col])
         # print(self.state)
-        obs = [self.state,row,col,self.finish_row,self.finish_col,int(self.truncated),int(self.done),int(self.velocity)]+list(self._get_surroundings(col,row))
-        obs=np.array(obs)
+        vec = [self.state,row,col,self.finish_row,self.finish_col,int(self.truncated),int(self.done),int(self.velocity)]
+        image  = self._get_surroundings(col,row)
+        obs = {
+            "image": image,
+            "vector": np.array(vec, dtype=np.float32)
+            
+        }
+        
+        
         return obs,self.reward, self.done,self.truncated, {}
 
     def reset(self,seed=None,options=None):
@@ -125,7 +143,7 @@ class rlenv(Env):
         # print_grid(self.grid,None)
         if self.random_init:
             random_y = np.random.uniform(self.conf["rand_Y"][0], self.conf["rand_Y"][1] )  # Random row index
-            random_x = np.random.uniform(self.conf["rand_X"][0], self.conf["rand_X"][1] )
+            random_x = np.random.uniform(self.conf["rand_X"][0], self.conf["raimagnd_X"][1] )
             random_row , random_col = self._xytoij(random_x,random_y)
             # print(random_col,random_row)
             self.state = self._to_s(random_row, random_col)
@@ -144,9 +162,13 @@ class rlenv(Env):
         self.state_trajectory = []
         self.reward_trajectory = []
         self.state_trajectory.append([row,col])
-        obs = [self.state,row,col,self.finish_row,self.finish_col,int(self.truncated),int(self.done),int(self.velocity)]+list(self._get_surroundings(col,row))        
-        obs=np.array(obs)
-     
+        vec = [self.state,row,col,self.finish_row,self.finish_col,int(self.truncated),int(self.done),int(self.velocity)]
+        image  = self._get_surroundings(col,row)
+        obs = {
+            "image": image,
+            "vector": np.array(vec, dtype=np.float32)
+            
+        }
         return obs , {}
     
     
@@ -185,10 +207,10 @@ for episode in range (1, episodes+1):
     # while not done:
     for i in range (0,10):
         action= ac[i]#env.action_space.sample()
-        print(f"State now {divmod(int(state[0]),env.W)}")
+        print(f"State now {divmod(int(state['vector'][0]),env.W)}")
         state,reward,done,truncated,info = env.step(action)
         #print(state)
-        row, col = divmod(int(state[0]),env.W)
+        row, col = divmod(int(state['vector'][0]),env.W)
         
         a="left"
         if action==0:
@@ -200,7 +222,8 @@ for episode in range (1, episodes+1):
         if action==3:
             a="u"
         
-        print(f"Action {a} State {row,col, int(state[0])} Reward {reward}")
+        print(f"Action {a} State {row,col, int(state['vector'][0])} Reward {reward}")
         score=reward
     print("Episode:{} Score{}\n\n".format(episode,score))
     env.render()
+env.reset()
