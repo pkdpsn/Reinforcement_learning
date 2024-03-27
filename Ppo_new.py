@@ -49,5 +49,5 @@ def main():
     mean_reward, std_reward = evaluate_policy(model, env, n_eval_episodes=10)
     print(f"Mean reward: {mean_reward}, Std reward: {std_reward}")
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()

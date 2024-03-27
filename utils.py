@@ -19,7 +19,7 @@ def create_grid(conf=None):
     option = conf["options"]
     def potential1(x, y):
         # Mexican Hat
-        return 0*16*0.4 * (x**2 + y**2 - 1/4)**2 if x**2 + y**2 < 1/4 else 0
+        return 16*0.4 * (x**2 + y**2 - 1/4)**2 if x**2 + y**2 < 1/4 else 0
     def potential2(x, y):
         # The one with multiple hills and valleys
         return 0.3*(1-x)**2*np.exp(-x**2-(y+1)**2) - (0.2*x - x**3 - y**5)*np.exp(-x**2 - y**2) - 1/30*np.exp(-(x+1)**2 - y**2)
