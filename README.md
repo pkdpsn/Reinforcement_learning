@@ -1,5 +1,5 @@
 ﻿# Reinforcement_learning
-##Abstract
+## Abstract 
 We aim to determine the optimal trajectory of a smart micro-swimming particle in an environment with potential gradients, employing calculus equations
 and reinforcement learning techniques. Initially, we apply these methods to a Mexican hat potential without brim, then increase the complexity of the
 potential function.For lower potential values, the particle can easily traverse the potential barrier, whereas for higher potential values, circumventing
