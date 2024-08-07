@@ -5,7 +5,7 @@ from stable_baselines3.common.vec_env import SubprocVecEnv
 from stable_baselines3.common.env_util import make_vec_env
 from datetime import datetime
 from multiprocessing import freeze_support
-from Envs import rlenv
+from Envs2 import rlenv
 import threading
 
 
@@ -13,7 +13,7 @@ import threading
 
 models_dir = "models/PPO"
 logdir = "logs"
-TIMESTEPS = 500
+TIMESTEPS = 50000
 
 if not os.path.exists(models_dir):
     os.makedirs(models_dir)
@@ -37,18 +37,24 @@ def main():
         model.learn(total_timesteps=TIMESTEPS, tb_log_name=f"PPO{current_time} {i}", log_interval=1,reset_num_timesteps=False,progress_bar=True)
 
         model.save(f"{models_dir}/PPO_{TIMESTEPS}_{current_time}__{i}")
-        # obs = env.reset()
-        # done , truncated = False , False
-        # while not done or not truncated:
-        #     action, _states = model.predict(obs)
-        #     ## this is return of the step function return obs,self.reward, self.done,self.truncated, {} correct line
-        #     obs, rewards, done, truncated, info = env.step(action)
-            
-        env.render()
-        i=i+1
+        i+=1          
 
-    mean_reward, std_reward = evaluate_policy(model, env, n_eval_episodes=10)
-    print(f"Mean reward: {mean_reward}, Std reward: {std_reward}")
+        mean_reward, std_reward = evaluate_policy(model, env, n_eval_episodes=10)
+        print(f"Mean reward: {mean_reward}, Std reward: {std_reward}")
+
+        for episode in range(10):
+            obs,_ = env.reset()
+            done = False
+            turncated = False
+            j=0
+            while not done and not turncated and j<5000:
+                action, _ = model.predict(obs)
+                obs, reward, done,truncated, _ = env.step(action)
+                print(f"ACTION {action} {j}")
+                j+=1
+            if done:
+                    env.render()
+       
 
 if __name__ == "__main__":
     main()

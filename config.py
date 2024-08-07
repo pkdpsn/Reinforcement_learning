@@ -1,18 +1,19 @@
 DEFAULT_CONFIG = {
 
-    "X":[-1,1],
-    "Y":[-1,1],
-    "start":[-0.5,0],
-    "end":[0.5,0],
-    "visiblity":5,###keep it odd 
-    "Resolution":10,
-    "options":1,
+    "X":[-4,4],
+    "Y":[-4,4],
+    "start":[-3,0],
+    "end":[3,0],
+    "visiblity":11,###keep it odd 
+    "Resolution":5,
+    "options":2,
     "randomstart":0,
     "rand_Y":[-0.5,0.5],
     "rand_X":[-0.5,0.5]
 
     
 }
+
 
 
 # DEFAULT_CONFIG = {

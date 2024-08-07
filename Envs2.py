@@ -82,16 +82,15 @@ class rlenv(Env):
         self.state=self._to_s(int(self.start_row),int(self.start_col))
     
     def step(self, action):
-        # print(f"asas",self.state)
         row, col = divmod(self.state, self.W)
         prev_row,prev_col= row,col
         h_prev=self.grid[row,col]
-        if self.velocity == 0 or self.collective < -30 :  # Check termination conditions
+        if self.velocity == 0 or self.collective < -300 :  # Check termination conditions
             self.reward = -10
             self.truncated = True
             
-        elif  (row == int(self.finish_col) and col == int(self.finish_row)): 
-            self.reward = 0
+        elif  (col == int(self.finish_col) and row == int(self.finish_row)): 
+            self.reward = 10
             self.done = True
         else:
             self.done = False
@@ -123,7 +122,10 @@ class rlenv(Env):
                 dx_ds = 0
                 dy_ds = 1
 
-            update_vel = -(dx_ds*du_dx + dy_ds*du_dx) + sqrt(1 - (f**2 -(dx_ds*du_dx + dy_ds*du_dx)**2))
+            if (f**2 -(dx_ds*du_dx + dy_ds*du_dx)**2) > 1:
+                update_vel = -1
+            else:
+                update_vel = -(dx_ds*du_dx + dy_ds*du_dx) + sqrt(1 - (f**2 -(dx_ds*du_dx + dy_ds*du_dx)**2))
 
             ###------------yahan likhna hai ki velocity kaise change hogi-----------xx---kar diii---xx---###
             # update_vel = self.velocity**2 + 2 * self.gravity * (h_prev - h_new)
@@ -137,7 +139,6 @@ class rlenv(Env):
             self.state = self._to_s(row, col)
         self.reward_trajectory.append(self.reward)
         self.state_trajectory.append([row,col])
-        # print(self.state)
         obs = [self.state,row,col,self.finish_row,self.finish_col,int(self.truncated),int(self.done),int(self.velocity)]+list(self._get_surroundings(col,row))
         obs=np.array(obs)
         return obs,self.reward, self.done,self.truncated, {}
@@ -155,7 +156,9 @@ class rlenv(Env):
         else:
             self.state=self._to_s(int(self.start_row),int(self.start_col))
         # print(f"selfstate",self.state)
-
+        # if self.done:
+        #     env.render()
+        #     print("IM HERE")
         row, col = divmod(self.state, self.W)
         self.velocity = 1
         self.reward = 0
@@ -194,36 +197,36 @@ env.render()
 # model = DQN("MlpPolicy", env,learning_rate=0.001,buffer_size=1000 ,verbose=1)
 # model.learn(total_timesteps=2000,progress_bar=True)
 
-episodes=1
-time = 0
+# episodes=1
+# time = 0
 
-for episode in range (1, episodes+1):
-    state,_ = env.reset()
-    # print(state)
-    done = False
-    truncated=False
-    score =0
-    ac=[2,2,2,2,2,2,2,2,2,2]
-    # while not done:
-    for i in range (0,10):
-        action= ac[i]#env.action_space.sample()
-        print(f"State now {divmod(int(state[0]),env.W)}")
-        state,reward,done,truncated,info = env.step(action)
-        # print(state)
-        row, col = divmod(int(state[0]),env.W)
+# for episode in range (1, episodes+1):
+#     state,_ = env.reset()
+#     # print(state)
+#     done = False
+#     truncated=False
+#     score =0
+#     ac=[2,2,2,2,2,2,2,2,2,2]
+#     # while not done:
+#     for i in range (0,10):
+#         action= ac[i]#env.action_space.sample()
+#         print(f"State now {divmod(int(state[0]),env.W)}")
+#         state,reward,done,truncated,info = env.step(action)
+#         # print(state)
+#         row, col = divmod(int(state[0]),env.W)
         
-        a="left"
-        if action==0:
-            a="l"
-        if action==1:
-            a="d"
-        if action==2:
-            a="r"
-        if action==3:
-            a="u"
-        print(f"Action {a} State {row,col, int(state[0])} Reward {reward}")
-        score+=reward
-        print("collective = ", env.collective)
-    print("Episode:{} Score{}\n\n".format(episode,score))
-    env.render()
+#         a="left"
+#         if action==0:
+#             a="l"
+#         if action==1:
+#             a="d"
+#         if action==2:
+#             a="r"
+#         if action==3:
+#             a="u"
+#         print(f"Action {a} State {row,col, int(state[0])} Reward {reward}")
+#         score+=reward
+#         print("collective = ", env.collective)
+#     print("Episode:{} Score{}\n\n".format(episode,score))
+#     env.render()
 
